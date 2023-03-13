@@ -1,0 +1,18 @@
+#!/bin/sh
+# xgrycj03 Jakub Gryc
+# 12/3/2023
+
+export POSIXLY_CORRECT=yes
+export LC_ALL=C
+
+if [ -f "$MOLE_RC" ]; then
+    :
+else
+    mkdir -p `dirname $MOLE_RC`
+    touch $MOLE_RC
+fi
+
+echo "molerc located in $MOLE_RC"
+
+
+
