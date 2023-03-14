@@ -5,14 +5,87 @@
 export POSIXLY_CORRECT=yes
 export LC_ALL=C
 
-if [ -f "$MOLE_RC" ]; then
-    :
-else
-    mkdir -p `dirname $MOLE_RC`
-    touch $MOLE_RC
+FILENAME=$(realpath "$3")
+EDITR=""
+DATE=$(date +%Y-%m-%d_%H-%M-%S)
+marg=0
+garg=0
+
+## if variable MOLE_RC not defined, exit 
+if [ -z "$MOLE_RC" ]; then
+    echo "Promenna \$MOLE_RC neni definovana!"
+    exit 1
 fi
 
-echo "molerc located in $MOLE_RC"
+## create molerc file if not defined
+if [ ! -f "$MOLE_RC" ]; then
+    mkdir -p "$(dirname "$MOLE_RC")"
+    touch "$MOLE_RC"
+fi
+
+## set editor
+if [ -z "$EDITOR" ]; then
+    EDITR=$VISUAL
+    if [ -z "$EDITR" ]; then
+        EDITR='vi'
+    fi
+else
+    EDITR=$EDITOR
+fi
 
 
+print_help() {
+    echo "    Usage:
+    ---------------------------------------------------------
+    mole -h                               | vypise tento help
+    mole [-g GROUP] FILE                  | 
+    mole [-m] [FILTERS] [DIRECTORY]       |
+    mole list [FILTERS] [DIRECTORY]       |
+          "
+      }
+
+write_to_molerc() {
+    echo "$1,$2,$3" >> "$MOLE_RC"
+}
+
+
+
+while getopts "g:mh" OPT; do 
+    case $OPT in
+        g)
+            garg=1
+            groups=$OPTARG
+            echo "Option g is used"
+            ;;
+        m)
+            
+            marg=1
+            echo "Option m used"
+            ;;
+        h)
+            print_help
+            exit 0
+            ;;
+        ?)
+            print_help
+            exit 1
+            ;;
+    esac
+done
+
+if [ 1 -eq $garg ]; then
+    write_to_molerc "$FILENAME" "$groups" "$DATE"
+fi
+
+if [ 1 -eq $marg ]; then
+    echo "ITS TRUE"
+else
+    echo "FAAAAAAAALSE"
+fi
+
+
+$EDITR "$FILENAME"
+
+
+#echo "$FILENAME" >> "$MOLE_RC"
 
