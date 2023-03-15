@@ -5,11 +5,18 @@
 export POSIXLY_CORRECT=yes
 export LC_ALL=C
 
-FILENAME=$(realpath "$3")
 EDITR=""
 DATE=$(date +%Y-%m-%d_%H-%M-%S)
+groups=""
 marg=0
 garg=0
+barg=0
+aarg=0
+bdate=""
+adate=""
+listarg=0
+secret_logarg=""
+last_arg=""
 
 ## if variable MOLE_RC not defined, exit 
 if [ -z "$MOLE_RC" ]; then
@@ -34,6 +41,7 @@ else
 fi
 
 
+
 print_help() {
     echo "    Usage:
     ---------------------------------------------------------
@@ -43,14 +51,17 @@ print_help() {
     mole list [FILTERS] [DIRECTORY]       |
           "
       }
+if [ "$1" = "list" ]; then
+    listarg=1
+    shift
+elif [ "$1" = "secret-log" ]; then
+    secret_logarg=1
+    shift
+fi
 
-write_to_molerc() {
-    echo "$1,$2,$3" >> "$MOLE_RC"
-}
 
 
-
-while getopts "g:mh" OPT; do 
+while getopts "g:mhb:a:" OPT; do 
     case $OPT in
         g)
             garg=1
@@ -66,6 +77,14 @@ while getopts "g:mh" OPT; do
             print_help
             exit 0
             ;;
+        b)
+            barg=1
+            bdate=$OPTARG
+            ;;
+        a)
+            aarg=1
+            adate=$OPTARG
+            ;;
         ?)
             print_help
             exit 1
@@ -73,15 +92,24 @@ while getopts "g:mh" OPT; do
     esac
 done
 
-if [ 1 -eq $garg ]; then
+while [ "$#" -gt 1 ]; do
+    shift
+done
+
+last_arg="$1"
+FILENAME=$(realpath "$last_arg")
+
+
+
+write_to_molerc() {
+    echo "$1,$2,$3" >> "$MOLE_RC"
+}
+
+
+if [ 1 -ne $marg ]; then
     write_to_molerc "$FILENAME" "$groups" "$DATE"
 fi
 
-if [ 1 -eq $marg ]; then
-    echo "ITS TRUE"
-else
-    echo "FAAAAAAAALSE"
-fi
 
 
 $EDITR "$FILENAME"
