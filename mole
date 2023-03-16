@@ -97,7 +97,11 @@ while [ "$#" -gt 1 ]; do
 done
 
 last_arg="$1"
-FILENAME=$(realpath "$last_arg")
+if [ -n "$last_arg" ]; then
+    FILENAME=$(realpath "$last_arg")
+else
+    FILENAME=""
+fi
 
 
 
@@ -106,7 +110,7 @@ write_to_molerc() {
 }
 
 
-if [ 1 -ne $marg ]; then
+if [ 1 -ne $marg ] && [ -n "$FILENAME" ]; then
     write_to_molerc "$FILENAME" "$groups" "$DATE"
 fi
 
