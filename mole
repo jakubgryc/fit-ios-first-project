@@ -45,7 +45,7 @@ fi
 
 
 print_help() {
-    echo "    Usage:
+    echo " Usage:
     ---------------------------------------------------------
     mole -h                               | vypise tento help
     mole [-g GROUP] FILE                  | 
@@ -112,6 +112,8 @@ elif [ -f "$last_arg" ]; then
     FILENAME=$(realpath "$last_arg")
 fi
 
+echo dirname is: k"$DIRNAME"k
+
 
 
 write_to_molerc() {
@@ -123,9 +125,13 @@ open_file() {
 }
 
 
-if [ 1 -ne $marg ] && [ -n "$FILENAME" ]; then
-    open_file "$FILENAME"
-    write_to_molerc "$FILENAME" "$groups" "$DATE"
+## open and assign group if any
+if [ 1 -ne $SLOG ] || [ 1 -ne $listarg ]; then
+    if  [ -n "$FILENAME" ]; then
+        open_file "$FILENAME"
+        write_to_molerc "$FILENAME" "$groups" "$DATE"
+    elif [ -n "$DIRNAME
+    fi
 fi
 
 
