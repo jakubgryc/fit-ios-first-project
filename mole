@@ -6,6 +6,8 @@ export POSIXLY_CORRECT=yes
 export LC_ALL=C
 
 EDITR=""
+FILENAME=""
+DIRNAME=""
 DATE=$(date +%Y-%m-%d_%H-%M-%S)
 groups=""
 marg=0
@@ -15,7 +17,7 @@ aarg=0
 bdate=""
 adate=""
 listarg=0
-secret_logarg=""
+SLOG=0
 last_arg=""
 
 ## if variable MOLE_RC not defined, exit 
@@ -55,7 +57,7 @@ if [ "$1" = "list" ]; then
     listarg=1
     shift
 elif [ "$1" = "secret-log" ]; then
-    secret_logarg=1
+    SLOG=1
     shift
 fi
 
@@ -92,15 +94,22 @@ while getopts "g:mhb:a:" OPT; do
     esac
 done
 
-while [ "$#" -gt 1 ]; do
-    shift
-done
+if [ 1 -ne $SLOG ]; then
+    while [ "$#" -gt 1 ]; do
+        shift
+    done
+fi
+
+
+
+
+
 
 last_arg="$1"
-if [ -n "$last_arg" ]; then
+if [ -d "$last_arg" ] || [ -z "$last_arg" ]; then
+    DIRNAME=$(realpath "$last_arg")
+elif [ -f "$last_arg" ]; then
     FILENAME=$(realpath "$last_arg")
-else
-    FILENAME=""
 fi
 
 
@@ -109,14 +118,18 @@ write_to_molerc() {
     echo "$1,$2,$3" >> "$MOLE_RC"
 }
 
+open_file() {
+    $EDITR "$1"
+}
+
 
 if [ 1 -ne $marg ] && [ -n "$FILENAME" ]; then
+    open_file "$FILENAME"
     write_to_molerc "$FILENAME" "$groups" "$DATE"
 fi
 
 
 
-$EDITR "$FILENAME"
 
 
 #echo "$FILENAME" >> "$MOLE_RC"
