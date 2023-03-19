@@ -19,6 +19,12 @@ adate=""
 listarg=0
 SLOG=0
 last_arg=""
+dirpath=""
+filepath=""
+RETVAL=0
+
+
+echo "time of run: $(date +%H-%M-%S)"
 
 ## if variable MOLE_RC not defined, exit 
 if [ -z "$MOLE_RC" ]; then
@@ -45,14 +51,45 @@ fi
 
 
 print_help() {
-    echo " Usage:
-    ---------------------------------------------------------
-    mole -h                               | vypise tento help
-    mole [-g GROUP] FILE                  | 
-    mole [-m] [FILTERS] [DIRECTORY]       |
-    mole list [FILTERS] [DIRECTORY]       |
+    echo "   
+   
+     Usage:
+
+     #########################################################
+     
+     mole -h                               | vypise tento help
+     mole [-g GROUP] FILE                  | 
+     mole [-m] [FILTERS] [DIRECTORY]       |
+     mole list [FILTERS] [DIRECTORY]       |
           "
       }
+
+## parameters: realpath of FILE,realpath of directory, FILENAME,groups,date
+write_to_molerc() {
+    echo "$1,$2,$3,$4,$5" >> "$MOLE_RC"
+}
+
+## parameters: FILENAME
+open_file() {
+    $EDITR "$1"
+}
+
+## set dirpath and filepath
+setpaths() {
+    FILENAME=$(echo "$1" | awk -F/ ' {print $NF} ')
+    dirpath=$(dirname "$1")
+}
+
+
+
+## parameters: marg, barg, aarg, groups, DIRNAME
+filter_to_open() {
+    ## no DIR set -> filter the most opened one
+    if [ -z "$5" ]; then
+        DIRNAME=$PWD
+    fi
+}
+
 if [ "$1" = "list" ]; then
     listarg=1
     shift
@@ -99,44 +136,39 @@ if [ 1 -ne $SLOG ]; then
         shift
     done
 fi
-
-
-
-
-
-
 last_arg="$1"
+
+
+
+
 if [ -d "$last_arg" ] || [ -z "$last_arg" ]; then
     DIRNAME=$(realpath "$last_arg")
 elif [ -f "$last_arg" ]; then
-    FILENAME=$(realpath "$last_arg")
+    filepath=$(realpath "$last_arg")
 fi
 
-echo dirname is: k"$DIRNAME"k
 
-
-
-write_to_molerc() {
-    echo "$1,$2,$3" >> "$MOLE_RC"
-}
-
-open_file() {
-    $EDITR "$1"
-}
-
-
-## open and assign group if any
-if [ 1 -ne $SLOG ] || [ 1 -ne $listarg ]; then
-    if  [ -n "$FILENAME" ]; then
+if [ 1 -ne $SLOG ] && [ 1 -ne $listarg ]; then
+    ## open and assign group if any
+    if  [ -f "$filepath" ]; then
+        setpaths "$filepath"
+        #echo "time of opening editor: $(date +%H-%M-%S)"
+        open_file "$filepath"
+        RETVAL=$?
+        #echo "time of closing editor: $(date +%H-%M-%S)"
+        write_to_molerc "$filepath" "$dirpath" "$FILENAME" "$groups" "$DATE"
+    ## open folder via filter
+    else 
+        filter_to_open "$marg" "$bdate" "$adate" "$groups" "$DIRNAME"
         open_file "$FILENAME"
+        RETVAL=$?
         write_to_molerc "$FILENAME" "$groups" "$DATE"
-    elif [ -n "$DIRNAME
     fi
 fi
 
 
 
-
+exit $RETVAL
 
 #echo "$FILENAME" >> "$MOLE_RC"
 
