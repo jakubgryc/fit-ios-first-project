@@ -8,14 +8,16 @@ export LC_ALL=C
 EDITR=""
 FILENAME=""
 DIRNAME=""
-DATE=$(date +%Y-%m-%d_%H-%M-%S)
+DATE=$(date +%Y-%m-%d)
+DATE_hms=$(date +%H-%M-%S)
+DATE_suffix="23-59-59"
 groups=""
 marg=0
 garg=0
 barg=0
 aarg=0
-bdate=""
-adate=""
+bdate="9999-12-31"
+adate="0000-00-00"
 listarg=0
 SLOG=0
 last_arg=""
@@ -64,13 +66,14 @@ print_help() {
           "
       }
 
-## parameters: realpath of FILE,realpath of directory, FILENAME,groups,date
+## parameters: realpath of FILE,realpath of directory, FILENAME,groups,date, date_hms
 write_to_molerc() {
-    echo "$1,$2,$3,$4,$5" >> "$MOLE_RC"
+    echo "$1,$2,$3,$4,$5,$6" >> "$MOLE_RC"
 }
 
 ## parameters: FILENAME
 open_file() {
+    setpaths "$1"
     $EDITR "$1"
 }
 
@@ -81,13 +84,27 @@ setpaths() {
 }
 
 
+filter() {
+    dir="$2"
+    if [ -d "$dir" ]; then
+        cat "$MOLE_RC" | awk -F, -v DIR="$dir" '$2 == DIR { print }'
+    fi
+}
 
-## parameters: marg, barg, aarg, groups, DIRNAME
+
+
+## parameters: marg, barg, aarg, groups, dirpath
 filter_to_open() {
     ## no DIR set -> filter the most opened one
     if [ -z "$5" ]; then
-        DIRNAME=$PWD
+        dirpath=$PWD
     fi
+    files=$(filter 1 "$dirpath")
+    filepath=$(echo "$files" | tail -1 | awk -F, ' {print $1}')
+    
+
+    
+    
 }
 
 if [ "$1" = "list" ]; then
@@ -141,34 +158,34 @@ last_arg="$1"
 
 
 
-if [ -d "$last_arg" ] || [ -z "$last_arg" ]; then
-    DIRNAME=$(realpath "$last_arg")
+if [ -d "$last_arg" ]; then
+    dirpath=$(realpath "$last_arg")
 elif [ -f "$last_arg" ]; then
     filepath=$(realpath "$last_arg")
+elif [ -z "$last_arg" ]; then
+    dirpath=""
 fi
 
 
 if [ 1 -ne $SLOG ] && [ 1 -ne $listarg ]; then
     ## open and assign group if any
     if  [ -f "$filepath" ]; then
-        setpaths "$filepath"
         #echo "time of opening editor: $(date +%H-%M-%S)"
         open_file "$filepath"
         RETVAL=$?
         #echo "time of closing editor: $(date +%H-%M-%S)"
-        write_to_molerc "$filepath" "$dirpath" "$FILENAME" "$groups" "$DATE"
-    ## open folder via filter
+        write_to_molerc "$filepath" "$dirpath" "$FILENAME" "$groups" "$DATE" "$DATE_hms"
+    ## open file via filter
     else 
-        filter_to_open "$marg" "$bdate" "$adate" "$groups" "$DIRNAME"
-        open_file "$FILENAME"
+        filter_to_open "$marg" "$bdate" "$adate" "$groups" "$dirpath"
+        open_file "$filepath"
         RETVAL=$?
-        write_to_molerc "$FILENAME" "$groups" "$DATE"
+        write_to_molerc "$filepath" "$dirpath" "$FILENAME" "$groups" "$DATE" "$DATE_hms"
+        #write_to_molerc "$FILENAME" "$groups" "$DATE"
     fi
 fi
 
 
 
 exit $RETVAL
-
-#echo "$FILENAME" >> "$MOLE_RC"
 
