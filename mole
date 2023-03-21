@@ -49,9 +49,6 @@ else
     EDITR=$EDITOR
 fi
 
-
-
-EDITR="vi"
 print_help() {
     echo "   
    
