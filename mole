@@ -16,8 +16,8 @@ marg=0
 garg=0
 barg=0
 aarg=0
-bdate="9999-12-31"
-adate="0000-00-00"
+bdate=""
+adate=""
 listarg=0
 SLOG=0
 last_arg=""
@@ -135,12 +135,13 @@ filter_to_open() {
     fi
 
 
-    #echo im here: "$dirpath"
     filepath=$(echo "$files" | tail -1 | awk -F, ' {print $1}')
-    #echo "$files"
-    #echo ""
-    #echo "$filepath"
-    #exit 0
+
+    ## no matches found 
+    if [ -z "$filepath" ]; then
+        echo "Error, couldn't find any file with given filters"
+        exit 1
+    fi
     
 
     
@@ -211,20 +212,15 @@ fi
 if [ 1 -ne $SLOG ] && [ 1 -ne $listarg ]; then
     ## open and assign group if any
     if  [ -f "$filepath" ]; then
-        #echo "time of opening editor: $(date +%H-%M-%S)"
-        echo "1"
         open_file "$filepath"
         RETVAL=$?
-        #echo "time of closing editor: $(date +%H-%M-%S)"
         write_to_molerc "$filepath" "$dirpath" "$FILENAME" "$groups" "$DATE" "$DATE_hms"
     ## open file via filter
     else 
-        echo "2"
         filter_to_open "$marg" "$barg" "$aarg" "$groups" "$dirpath"
         open_file "$filepath"
         RETVAL=$?
         write_to_molerc "$filepath" "$dirpath" "$FILENAME" "$groups" "$DATE" "$DATE_hms"
-        #write_to_molerc "$FILENAME" "$groups" "$DATE"
     fi
 fi
 
