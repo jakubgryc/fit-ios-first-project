@@ -176,13 +176,19 @@ done
 
 if [ 1 -ne $SLOG ]; then
     while [ "$#" -gt 1 ]; do
-        shift
+        if [ "$1" = "-a" ] || [ "$1" = "-g" ] || [ "$1" = "-b" ]; then
+            shift 2
+        else
+            shift
+        fi
     done
 fi
 last_arg="$1"
 
-
-
+## if only -m, then last_arg is "" -> $PWD
+if [ "$last_arg" = "-m" ]; then
+    last_arg=""
+fi
 
 if [ -d "$last_arg" ]; then
     dirpath=$(realpath "$last_arg")
