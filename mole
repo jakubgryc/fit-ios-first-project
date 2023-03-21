@@ -7,10 +7,9 @@ export LC_ALL=C
 
 EDITR=""
 FILENAME=""
-DIRNAME=""
 DATE=$(date +%Y-%m-%d)
 DATE_hms=$(date +%H-%M-%S)
-DATE_suffix="23-59-59"
+DATE_suffix="23-59-59" # suffix for correct functionality of -a argument (makes date YYYY-MM-DD-23-59-59)
 groups=""
 marg=0
 garg=0
@@ -52,6 +51,7 @@ fi
 
 
 
+EDITR="vi"
 print_help() {
     echo "   
    
@@ -74,7 +74,14 @@ write_to_molerc() {
 ## parameters: FILENAME
 open_file() {
     setpaths "$1"
+
     $EDITR "$1"
+}
+
+make_dir() {
+    mkdir -p "$(dirname "$1")"
+    touch "$1"
+
 }
 
 ## set dirpath and filepath
@@ -84,35 +91,6 @@ setpaths() {
 }
 
 
-
-## NOT NEEDED
-filter() {
-    ## filter by directory
-    if [ 1 -eq "$1" ]; then
-        cat "$MOLE_RC" | awk -F, -v DIR="$2" '$2 == DIR { print }'
-    fi
-    
-
-    ## filter by -b date (dates before given date)
-    if [ 2 -eq $1 ]; then
-        tdate="$2"
-        cat "$MOLE_RC" | awk -F, -v tdate="$tdate" '$5<tdate { print }'
-    fi
-    #
-    ## filter by -a date (dates after given date)
-    if [ 3 -eq $1 ]; then
-        tdate="$2"-"$DATE_suffix"
-        cat "$MOLE_RC" | awk -F, -v tdate="$tdate" '$5>tdate { print }'
-    fi
-
-    ## filter by groups
-    if [ 4 -eq "$1" ]; then
-        echo
-    fi
-}
-
-
-
 ## parameters: marg, barg, aarg, groups, dirpath
 filter_to_open() {
     ## no DIR set -> filter the most opened one
@@ -120,7 +98,7 @@ filter_to_open() {
         dirpath=$PWD
     fi
     #echo dirpath is: "$dirpath"
-    files=$( cat "$MOLE_RC" | awk -F, -v DIR="$dirpath" '$2 == DIR { print }')
+    files=$(awk -F, -v DIR="$dirpath" '$2 == DIR { print }' "$MOLE_RC")
 
     ## before -b
     if [ "1" = "$barg" ]; then
@@ -134,8 +112,15 @@ filter_to_open() {
         files=$(echo "$files" | awk -F, -v tdate="$tdate" '$5>tdate { print }')
     fi
 
+    if [ "1" = "$garg" ]; then
+        files=$(echo "$files" | awk -F, -v groups="$groups" 'BEGIN{split(groups, arr, ",")} { for (i in arr) {if ($4 == arr[i]) { print}}}')
+    fi
 
-    filepath=$(echo "$files" | tail -1 | awk -F, ' {print $1}')
+    if [ "1" = "$marg" ]; then
+        filepath=$(echo "$files" | awk -F, ' {print $1} ' | awk '{for(i=1;i<=NF;i++) a[$i]++} END{for(i in a) print i,a[i]}' | sort -rnk2 | awk ' {print $1}' | head -1)
+    else
+        filepath=$(echo "$files" | tail -1 | awk -F, ' {print $1}')
+    fi
 
     ## no matches found 
     if [ -z "$filepath" ]; then
@@ -201,17 +186,21 @@ last_arg="$1"
 
 if [ -d "$last_arg" ]; then
     dirpath=$(realpath "$last_arg")
-elif [ -f "$last_arg" ]; then
-    filepath=$(realpath "$last_arg")
 elif [ -z "$last_arg" ]; then
     dirpath=""
+else 
+    if [ ! -f "$last_arg" ]; then
+        make_dir "$last_arg"
+    fi
+    filepath=$(realpath "$last_arg")
+    echo filepath is: "$filepath"
 fi
 
-#echo dirpath is: "$dirpath"
+
 
 if [ 1 -ne $SLOG ] && [ 1 -ne $listarg ]; then
     ## open and assign group if any
-    if  [ -f "$filepath" ]; then
+    if  [ -n "$filepath" ]; then
         open_file "$filepath"
         RETVAL=$?
         write_to_molerc "$filepath" "$dirpath" "$FILENAME" "$groups" "$DATE" "$DATE_hms"
@@ -220,7 +209,7 @@ if [ 1 -ne $SLOG ] && [ 1 -ne $listarg ]; then
         filter_to_open "$marg" "$barg" "$aarg" "$groups" "$dirpath"
         open_file "$filepath"
         RETVAL=$?
-        write_to_molerc "$filepath" "$dirpath" "$FILENAME" "$groups" "$DATE" "$DATE_hms"
+        write_to_molerc "$filepath" "$dirpath" "$FILENAME" "" "$DATE" "$DATE_hms"
     fi
 fi
 
