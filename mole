@@ -84,10 +84,30 @@ setpaths() {
 }
 
 
+
+## NOT NEEDED
 filter() {
-    dir="$2"
-    if [ -d "$dir" ]; then
-        cat "$MOLE_RC" | awk -F, -v DIR="$dir" '$2 == DIR { print }'
+    ## filter by directory
+    if [ 1 -eq "$1" ]; then
+        cat "$MOLE_RC" | awk -F, -v DIR="$2" '$2 == DIR { print }'
+    fi
+    
+
+    ## filter by -b date (dates before given date)
+    if [ 2 -eq $1 ]; then
+        tdate="$2"
+        cat "$MOLE_RC" | awk -F, -v tdate="$tdate" '$5<tdate { print }'
+    fi
+    #
+    ## filter by -a date (dates after given date)
+    if [ 3 -eq $1 ]; then
+        tdate="$2"-"$DATE_suffix"
+        cat "$MOLE_RC" | awk -F, -v tdate="$tdate" '$5>tdate { print }'
+    fi
+
+    ## filter by groups
+    if [ 4 -eq "$1" ]; then
+        echo
     fi
 }
 
@@ -96,11 +116,31 @@ filter() {
 ## parameters: marg, barg, aarg, groups, dirpath
 filter_to_open() {
     ## no DIR set -> filter the most opened one
-    if [ -z "$5" ]; then
+    if [ -z "$dirpath" ]; then
         dirpath=$PWD
     fi
-    files=$(filter 1 "$dirpath")
+    #echo dirpath is: "$dirpath"
+    files=$( cat "$MOLE_RC" | awk -F, -v DIR="$dirpath" '$2 == DIR { print }')
+
+    ## before -b
+    if [ "1" = "$barg" ]; then
+        tdate="$bdate"
+        files=$(echo "$files" | awk -F, -v tdate="$tdate" '$5<tdate { print }')
+    fi
+
+    ## after -a
+    if [ "1" = "$aarg" ]; then
+        tdate="$adate"-"$DATE_suffix"
+        files=$(echo "$files" | awk -F, -v tdate="$tdate" '$5>tdate { print }')
+    fi
+
+
+    #echo im here: "$dirpath"
     filepath=$(echo "$files" | tail -1 | awk -F, ' {print $1}')
+    #echo "$files"
+    #echo ""
+    #echo "$filepath"
+    #exit 0
     
 
     
@@ -166,18 +206,21 @@ elif [ -z "$last_arg" ]; then
     dirpath=""
 fi
 
+#echo dirpath is: "$dirpath"
 
 if [ 1 -ne $SLOG ] && [ 1 -ne $listarg ]; then
     ## open and assign group if any
     if  [ -f "$filepath" ]; then
         #echo "time of opening editor: $(date +%H-%M-%S)"
+        echo "1"
         open_file "$filepath"
         RETVAL=$?
         #echo "time of closing editor: $(date +%H-%M-%S)"
         write_to_molerc "$filepath" "$dirpath" "$FILENAME" "$groups" "$DATE" "$DATE_hms"
     ## open file via filter
     else 
-        filter_to_open "$marg" "$bdate" "$adate" "$groups" "$dirpath"
+        echo "2"
+        filter_to_open "$marg" "$barg" "$aarg" "$groups" "$dirpath"
         open_file "$filepath"
         RETVAL=$?
         write_to_molerc "$filepath" "$dirpath" "$FILENAME" "$groups" "$DATE" "$DATE_hms"
