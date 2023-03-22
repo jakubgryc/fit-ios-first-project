@@ -7,9 +7,11 @@ export LC_ALL=C
 
 EDITR=""
 FILENAME=""
-DATE=$(date +%Y-%m-%d)
-DATE_hms=$(date +%H-%M-%S)
-FULLDATE="$DATE""_""$DATE_hms"
+DATE=$(date +%Y-%m-%d_%H-%M-%S)
+#DATE="2023-02-24_15-52-34"
+#DATE="$BINSLOZKA""/testdate"
+#DATE_hms=$(date +%H-%M-%S)
+FULLDATE="$DATE"_"$DATE_hms"
 DATE_suffix="23-59-59" # suffix for correct functionality of -a argument (makes date YYYY-MM-DD-23-59-59)
 groups=""
 marg=0
@@ -33,7 +35,7 @@ LOG_DIR="/home/$USER/.mole"
 
 ## if variable MOLE_RC not defined, exit 
 if [ -z "$MOLE_RC" ]; then
-    echo "Promenna \$MOLE_RC neni definovana!"
+    >&2 echo "Promenna \$MOLE_RC neni definovana!"
     exit 1
 fi
 
@@ -116,13 +118,13 @@ filter() {
 
     ## after -a
     if [ "1" = "$aarg" ]; then
-        tdate="$adate"-"$DATE_suffix"
+        tdate="$adate""_$DATE_suffix"
         files=$(echo "$files" | awk -F, -v tdate="$tdate" '$5>tdate { print }')
     fi
 
     ## filter by groups
     if [ "1" = "$garg" ]; then
-        files=$(echo "$files" | awk -F, -v groups="$groups" 'BEGIN{split(groups, arr, ",")} { for (i in arr) {if ($4 == arr[i]) { print}}}')
+        files=$(echo "$files" | awk -F, -v groups="$groups" 'BEGIN{split(groups, arr, ",")} { for (i in arr){ {if ($4 == arr[i]) { print } } } }')
     fi
 
     ## filter by -d -> files opened in no groups
@@ -139,14 +141,14 @@ filter() {
 
     ## no matches found 
     if [ -z "$files" ]; then
-        echo "Error, couldn't find any file with given filters"
+        >&2 echo "Error, couldn't find any file with given filters"
         exit 1
     fi
     
 }
 
 make_list() {
-    files=$(echo "$files" | awk -F, ' {print $3" "$4}' | sort -k2df)
+    files=$(echo "$files" | awk -F, ' {print $3" "$4}' | sort -k2 | uniq)
     files=$(echo "$files" | awk ' { if ($2 == "") {
                         a[$1] = ""}
                        else {
@@ -155,8 +157,8 @@ make_list() {
                            else{
                            a[$1] =a[$1] "," $2}}}
                      END { for (i in a) {
-                     if (a[i] == "") { print i, " -"}
-                         else {print i" " a[i]}}}' | awk 'BEGIN{len=0} {if (length($1) > len) {len = length($1)}} { printf "%-"len"s %s\n", $1, $2}' | sort -k1df)
+                     if (a[i] == "") { print i":" " -"}
+                     else {print i": " a[i]}}}' | awk ' BEGIN{len=0} {if (length($1) > len) {len = length($1)}; a[$1] = $2}  END{for (i in a) {printf "%-"len"s %s\n", i, a[i]}}' | sort -k1df)
     echo "$files"
     exit 0
 }
@@ -169,7 +171,7 @@ secret_log() {
         mkdir -p "$LOG_DIR"
     fi
 
-    echo "$files" | bzip2 -c > "$LOG_DIR"/log_"$USER"_"$FULLDATE".bz2
+    echo "$files" | bzip2 -c > "$LOG_DIR"/log_"$USER"_"$DATE".bz2
     exit 0
 }
 
@@ -188,12 +190,10 @@ while getopts "g:mhb:a:d" OPT; do
         g)
             garg=1
             groups=$OPTARG
-            echo "Option g is used"
             ;;
         m)
             
             marg=1
-            echo "Option m used"
             ;;
         h)
             print_help
@@ -219,7 +219,7 @@ done
 
 ## -d and -g are exclusive
 if [ 1 -eq $darg ] && [ 1 -eq $garg ]; then
-    echo "Nelze zadat prepinace -d a -g najednou!"
+    >&2 echo "Nelze zadat prepinace -d a -g najednou!"
     exit 1
 fi
 
@@ -284,13 +284,13 @@ if [ 1 -ne $SLOG ]; then
     if  [ -n "$filepath" ]; then
         open_file "$filepath"
         RETVAL=$?
-        write_to_molerc "$filepath" "$dirpath" "$FILENAME" "$groups" "$DATE"_"$DATE_hms"
+        write_to_molerc "$filepath" "$dirpath" "$FILENAME" "$groups" "$DATE"
     ## open file via filter
     elif [ 1 -ne $listarg ]; then
         filter 
         open_file "$filepath"
         RETVAL=$?
-        write_to_molerc "$filepath" "$dirpath" "$FILENAME" "" "$DATE"_"$DATE_hms"
+        write_to_molerc "$filepath" "$dirpath" "$FILENAME" "" "$DATE"
     else
         filter
         make_list
