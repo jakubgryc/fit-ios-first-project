@@ -9,21 +9,24 @@ EDITR=""
 FILENAME=""
 DATE=$(date +%Y-%m-%d)
 DATE_hms=$(date +%H-%M-%S)
+FULLDATE="$DATE""_""$DATE_hms"
 DATE_suffix="23-59-59" # suffix for correct functionality of -a argument (makes date YYYY-MM-DD-23-59-59)
 groups=""
 marg=0
 garg=0
 barg=0
 aarg=0
+darg=0
+listarg=0
 bdate=""
 adate=""
-listarg=0
 SLOG=0
 last_arg=""
 dirpath=""
 filepath=""
 RETVAL=0
 directories=""
+LOG_DIR="/home/$USER/.mole"
 
 
 #echo "time of run: $(date +%H-%M-%S)"
@@ -118,10 +121,17 @@ filter() {
         files=$(echo "$files" | awk -F, -v tdate="$tdate" '$5>tdate { print }')
     fi
 
+    ## filter by groups
     if [ "1" = "$garg" ]; then
         files=$(echo "$files" | awk -F, -v groups="$groups" 'BEGIN{split(groups, arr, ",")} { for (i in arr) {if ($4 == arr[i]) { print}}}')
     fi
 
+    ## filter by -d -> files opened in no groups
+    if [ "1" = "$darg" ]; then
+        files=$(echo "$files" | awk -F, '$4 ~ /^$/ { print }')
+    fi
+
+    ## find which one was opened the most often
     if [ "1" = "$marg" ]; then
         filepath=$(echo "$files" | awk -F, ' {print $1} ' | awk '{for(i=1;i<=NF;i++) a[$i]++} END{for(i in a) print i,a[i]}' | sort -rnk2 | awk ' {print $1}' | head -1)
     else
@@ -140,7 +150,11 @@ secret_log() {
     files=$(echo "$files" | awk -F, ' {print $1"," $5}')
     files=$(echo "$files" | awk -F, '{a[$1] = a[$1] ";" $2} END {for (i in a) print i";" substr(a[i], 2)}' | sort -df)
     #files=$(echo "$files" | sort -t ";" -k1)
-    echo "$files"
+    if [ ! -d "$LOG_DIR" ];then
+        mkdir -p "$LOG_DIR"
+    fi
+
+    echo "$files" | bzip2 -c > "$LOG_DIR"/log_"$USER"_"$FULLDATE".bz2
     exit 0
 }
 
@@ -154,7 +168,7 @@ fi
 
 
 
-while getopts "g:mhb:a:" OPT; do 
+while getopts "g:mhb:a:d" OPT; do 
     case $OPT in
         g)
             garg=1
@@ -178,12 +192,21 @@ while getopts "g:mhb:a:" OPT; do
             aarg=1
             adate=$OPTARG
             ;;
+        d)
+            darg=1
+            ;;
         ?)
             print_help
             exit 1
             ;;
     esac
 done
+
+## -d and -g are exclusive
+if [ 1 -eq $darg ] && [ 1 -eq $garg ]; then
+    echo "Nelze zadat prepinace -d a -g najednou!"
+    exit 1
+fi
 
 if [ 1 -ne $SLOG ]; then
     while [ "$#" -gt 1 ]; do
@@ -220,8 +243,8 @@ if [ 1 -eq $SLOG ]; then
 fi
 
 
-## if only -m, then last_arg is "" -> $PWD
-if [ "$last_arg" = "-m" ]; then
+## if only -m or -d, then last_arg is "" -> $PWD
+if [ "$last_arg" = "-d" ] || [ "$last_arg" = "-m" ]; then
     last_arg=""
 fi
 
