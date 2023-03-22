@@ -8,10 +8,6 @@ export LC_ALL=C
 EDITR=""
 FILENAME=""
 DATE=$(date +%Y-%m-%d_%H-%M-%S)
-#DATE="2023-02-24_15-52-34"
-#DATE="$BINSLOZKA""/testdate"
-#DATE_hms=$(date +%H-%M-%S)
-FULLDATE="$DATE"_"$DATE_hms"
 DATE_suffix="23-59-59" # suffix for correct functionality of -a argument (makes date YYYY-MM-DD-23-59-59)
 groups=""
 marg=0
@@ -19,6 +15,7 @@ garg=0
 barg=0
 aarg=0
 darg=0
+rarg=0
 listarg=0
 bdate=""
 adate=""
@@ -166,10 +163,7 @@ make_list() {
 secret_log() {
     files=$(echo "$files" | awk -F, ' {print $1"," $5}')
     files=$(echo "$files" | awk -F, '{a[$1] = a[$1] ";" $2} END {for (i in a) print i";" substr(a[i], 2)}' | sort -df)
-    #files=$(echo "$files" | sort -t ";" -k1)
-    if [ ! -d "$LOG_DIR" ];then
-        mkdir -p "$LOG_DIR"
-    fi
+    mkdir -p "$LOG_DIR"
 
     echo "$files" | bzip2 -c > "$LOG_DIR"/log_"$USER"_"$DATE".bz2
     exit 0
@@ -185,7 +179,7 @@ fi
 
 
 
-while getopts "g:mhb:a:d" OPT; do 
+while getopts "g:mhb:a:dr" OPT; do 
     case $OPT in
         g)
             garg=1
@@ -209,6 +203,9 @@ while getopts "g:mhb:a:d" OPT; do
             ;;
         d)
             darg=1
+            ;;
+        r)
+            rarg=1
             ;;
         ?)
             print_help
