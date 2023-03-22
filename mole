@@ -79,7 +79,7 @@ open_file() {
     $EDITR "$1"
 }
 
-make_dir() {
+make_dir_and_file() {
     mkdir -p "$(dirname "$1")"
     touch "$1"
 
@@ -95,11 +95,10 @@ setpaths() {
 ## parameters: marg, barg, aarg, groups, dirpath
 filter() {
     if [ 1 -ne "$SLOG" ]; then
-        ## no DIR set -> filter the most opened one
+        ## no DIR set -> filter in PWD
         if [ -z "$dirpath" ]; then
             dirpath=$PWD
         fi
-        #echo dirpath is: "$dirpath"
         files=$(awk -F, -v DIR="$dirpath" '$2 == DIR { print }' "$MOLE_RC")
     else
         if [ -z "$directories" ]; then
@@ -144,6 +143,22 @@ filter() {
         exit 1
     fi
     
+}
+
+make_list() {
+    files=$(echo "$files" | awk -F, ' {print $3" "$4}' | sort -k2df)
+    files=$(echo "$files" | awk ' { if ($2 == "") {
+                        a[$1] = ""}
+                       else {
+                           if (a[$1] == "") {
+                               a[$1] = a[$1]"" $2}
+                           else{
+                           a[$1] =a[$1] "," $2}}}
+                     END { for (i in a) {
+                     if (a[i] == "") { print i, " -"}
+                         else {print i" " a[i]}}}' | awk 'BEGIN{len=0} {if (length($1) > len) {len = length($1)}} { printf "%-"len"s %s\n", $1, $2}' | sort -k1df)
+    echo "$files"
+    exit 0
 }
 
 secret_log() {
@@ -216,7 +231,6 @@ if [ 1 -ne $SLOG ]; then
             shift
         fi
     done
-    last_arg="$1"
 else
     if [ "$1" = "-a" ]; then
         shift 2
@@ -226,7 +240,11 @@ else
     fi
 fi
 
-##TODO SECRET-LOG
+last_arg="$1"
+
+
+
+## parsing directories for secret-log
 if [ 1 -eq $SLOG ]; then
     if [ -n "$1" ]; then
         directories=$(realpath "$1")
@@ -254,25 +272,28 @@ elif [ -z "$last_arg" ]; then
     dirpath=""
 else 
     if [ ! -f "$last_arg" ]; then
-        make_dir "$last_arg"
+        make_dir_and_file "$last_arg"
     fi
     filepath=$(realpath "$last_arg")
 fi
 
 
 
-if [ 1 -ne $SLOG ] && [ 1 -ne $listarg ]; then
+if [ 1 -ne $SLOG ]; then
     ## open and assign group if any
     if  [ -n "$filepath" ]; then
         open_file "$filepath"
         RETVAL=$?
         write_to_molerc "$filepath" "$dirpath" "$FILENAME" "$groups" "$DATE"_"$DATE_hms"
     ## open file via filter
-    else 
+    elif [ 1 -ne $listarg ]; then
         filter 
         open_file "$filepath"
         RETVAL=$?
         write_to_molerc "$filepath" "$dirpath" "$FILENAME" "" "$DATE"_"$DATE_hms"
+    else
+        filter
+        make_list
     fi
 fi
 
