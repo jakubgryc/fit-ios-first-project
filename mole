@@ -1,5 +1,6 @@
 #!/bin/sh
-# xgrycj03 Jakub Gryc
+# xgrycj03 
+# Jakub Gryc
 # 12/3/2023
 
 export POSIXLY_CORRECT=yes
@@ -26,9 +27,6 @@ filepath=""
 RETVAL=0
 directories=""
 LOG_DIR="/home/$USER/.mole"
-
-
-#echo "time of run: $(date +%H-%M-%S)"
 
 ## if variable MOLE_RC not defined, exit 
 if [ -z "$MOLE_RC" ]; then
@@ -98,12 +96,20 @@ filter() {
         if [ -z "$dirpath" ]; then
             dirpath=$PWD
         fi
-        files=$(awk -F, -v DIR="$dirpath" '$2 == DIR { print }' "$MOLE_RC")
+        if [ "1" -ne "$rarg" ]; then
+            files=$(awk -F, -v DIR="$dirpath" '$2 == DIR { print }' "$MOLE_RC")
+        else
+            files=$(awk -F, -v DIR="$dirpath" '$1 ~ DIR { print }' "$MOLE_RC")
+        fi
     else
         if [ -z "$directories" ]; then
             files=$(cat "$MOLE_RC")
         else
-            files=$(awk -F, -v DIRS="$directories" 'BEGIN{split(DIRS, arr, ",")} { for (i in arr) {if ($2 == arr[i]) { print}}}' "$MOLE_RC")
+            if [ "1" -ne "$rarg" ]; then
+                files=$(awk -F, -v DIRS="$directories" 'BEGIN{split(DIRS, arr, ",")} { for (i in arr) {if ($2 == arr[i]) { print}}}' "$MOLE_RC")
+            else
+                files=$(awk -F, -v DIRS="$directories" 'BEGIN{split(DIRS, arr, ",")} { for (i in arr) {if ($1 ~ arr[i]) { print }}}' "$MOLE_RC")
+            fi
         fi
     fi
 
@@ -145,7 +151,8 @@ filter() {
 }
 
 make_list() {
-    files=$(echo "$files" | awk -F, ' {print $3" "$4}' | sort -k2 | uniq)
+    files=$(echo "$files" | awk -F, ' {print $1" "$4}' | sort -k2 | uniq)
+    files=$(echo "$files" | sed "s|$dirpath/||g")
     files=$(echo "$files" | awk ' { if ($2 == "") {
                         a[$1] = ""}
                        else {
@@ -235,11 +242,12 @@ else
     if [ "$1" = "-b" ]; then
         shift 2
     fi
+    if [ "$1" = "-r" ]; then
+        shift
+    fi
 fi
 
 last_arg="$1"
-
-
 
 ## parsing directories for secret-log
 if [ 1 -eq $SLOG ]; then
@@ -294,7 +302,4 @@ if [ 1 -ne $SLOG ]; then
     fi
 fi
 
-
-
 exit $RETVAL
-
