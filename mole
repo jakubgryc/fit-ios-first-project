@@ -272,7 +272,7 @@ fi
 
 
 ## if only -m or -d, then last_arg is "" -> $PWD
-if [ "$last_arg" = "-d" ] || [ "$last_arg" = "-m" ]; then
+if [ "$last_arg" = "-d" ] || [ "$last_arg" = "-r" ] || [ "$last_arg" = "-m" ]; then
     last_arg=""
 fi
 
@@ -290,20 +290,24 @@ fi
 
 
 if [ 1 -ne $SLOG ]; then
+    ## make list
+    if [ 1 -eq $listarg ]; then
+        dirpath=$(realpath "$last_arg")
+        filter
+        make_list
+        exit 0
+    fi
     ## open and assign group if any
     if  [ -n "$filepath" ]; then
         open_file "$filepath"
         RETVAL=$?
         write_to_molerc "$filepath" "$dirpath" "$FILENAME" "$groups" "$DATE"
     ## open file via filter
-    elif [ 1 -ne $listarg ]; then
+    else 
         filter 
         open_file "$filepath"
         RETVAL=$?
         write_to_molerc "$filepath" "$dirpath" "$FILENAME" "" "$DATE"
-    else
-        filter
-        make_list
     fi
 fi
 
