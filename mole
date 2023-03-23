@@ -106,9 +106,9 @@ filter() {
             files=$(cat "$MOLE_RC")
         else
             if [ "1" -ne "$rarg" ]; then
-                files=$(awk -F, -v DIRS="$directories" 'BEGIN{split(DIRS, arr, ",")} { for (i in arr) {if ($2 == arr[i]) { print}}}' "$MOLE_RC")
+                files=$(awk -F, -v DIRS="$directories" 'BEGIN{split(DIRS, arr, ",")} { for (i in arr) {if ($2 == arr[i]) { print; next }}}' "$MOLE_RC")
             else
-                files=$(awk -F, -v DIRS="$directories" 'BEGIN{split(DIRS, arr, ",")} { for (i in arr) {if ($1 ~ arr[i]) { print }}}' "$MOLE_RC")
+                files=$(awk -F, -v DIRS="$directories" 'BEGIN{split(DIRS, arr, ",")} { for (i in arr) {if ($1 ~ arr[i]) { print; next }}}' "$MOLE_RC")
             fi
         fi
     fi
