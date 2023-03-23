@@ -52,15 +52,14 @@ fi
 
 print_help() {
     echo "   
-   
-     Usage:
+  POUZITI:
 
-     #########################################################
-     
-     mole -h                               | vypise tento help
-     mole [-g GROUP] FILE                  | 
-     mole [-m] [FILTERS] [DIRECTORY]       |
-     mole list [FILTERS] [DIRECTORY]       |
+  #########################################################
+  
+  mole -h                               | prints help                 
+  mole [-g GROUP] FILE                  | otevere FILE, pokud byl pouzit prepinac -g, priradi otevreni ke skupine GROUP
+  mole [-m] [FILTERS] [DIRECTORY]       | otevre z DIRECTORY posledni zaznam, lze filtrovat pomoci [FILTERS], pouziti -m otevre nejcasteji otevreny soubor
+  mole list [FILTERS] [DIRECTORY]       | vypise seznam souboru otevrenych v DIRECTORY ('PWD' pokud nebylo definovano), popr. upravi podle FILTERS
           "
       }
 
