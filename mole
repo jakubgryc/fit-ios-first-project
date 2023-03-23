@@ -28,6 +28,12 @@ RETVAL=0
 directories=""
 LOG_DIR="/home/$USER/.mole"
 
+## checks realpath
+if  ! command -v realpath >/dev/null 2>&1 ;then
+    echo "Utilita 'realpath' neni nainstalovana!"
+    exit 1
+fi
+
 ## if variable MOLE_RC not defined, exit 
 if [ -z "$MOLE_RC" ]; then
     >&2 echo "Promenna \$MOLE_RC neni definovana!"
