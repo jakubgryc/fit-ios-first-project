@@ -79,12 +79,7 @@ open_file() {
     setpaths "$1"
 
     $EDITR "$1"
-}
-
-make_dir_and_file() {
-    mkdir -p "$(dirname "$1")"
-    touch "$1"
-
+    RETVAL=$?
 }
 
 ## set dirpath and filepath
@@ -281,9 +276,6 @@ if [ -d "$last_arg" ]; then
 elif [ -z "$last_arg" ]; then
     dirpath=""
 else 
-    if [ ! -f "$last_arg" ]; then
-        make_dir_and_file "$last_arg"
-    fi
     filepath=$(realpath "$last_arg")
 fi
 
@@ -300,13 +292,11 @@ if [ 1 -ne $SLOG ]; then
     ## open and assign group if any
     if  [ -n "$filepath" ]; then
         open_file "$filepath"
-        RETVAL=$?
         write_to_molerc "$filepath" "$dirpath" "$FILENAME" "$groups" "$DATE"
     ## open file via filter
     else 
         filter 
         open_file "$filepath"
-        RETVAL=$?
         write_to_molerc "$filepath" "$dirpath" "$FILENAME" "" "$DATE"
     fi
 fi
