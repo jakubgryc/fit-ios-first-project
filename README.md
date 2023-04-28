@@ -451,6 +451,3 @@ $ mole -m -d -b 2023-02-20 ~
 $ mole -m -d -g bash -b 2023-02-20 ~
 ... # ! chyba, přepínače -d a -g jsou výlučné
 ```
-
-Built with [Pandoc](https://www.pandoc.org/) using
-[pandoc-bootstrap](https://github.com/ashki23/pandoc-bootstrap) theme  
