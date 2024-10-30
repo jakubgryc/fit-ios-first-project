@@ -1,3 +1,9 @@
+> [!WARNING]
+> Zveřejněno pouze pro archivní účely.
+
+* hodnocení: 14.2/15 bodů
+
+
 # 1. Úloha IOS (2023)
 Popis úlohy
 ===========
